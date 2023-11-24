@@ -1,0 +1,141 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Nov 23 06:34:53 2023
+
+@author: LEGEND
+"""
+
+import pygame
+import random
+
+# Define some colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# Initialize pygame 
+pygame.init()
+
+# Set the height and width of the screen
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode([screen_width, screen_height])
+
+# Set title of screen
+pygame.display.set_caption("Brick Breaker")
+
+# Create the player paddle
+paddle_width = 100 
+paddle_height = 20
+paddle_x = screen_width/2 - paddle_width/2
+paddle_y = screen_height - paddle_height - 10
+paddle = pygame.Rect(paddle_x, paddle_y, paddle_width, paddle_height) 
+
+# Create a ball  
+ball_radius = 10
+ball_x = screen_width/2
+ball_y = screen_height/2
+ball_speed_x = 5
+ball_speed_y = 5
+ball = pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, 
+                    ball_radius*2, ball_radius*2)
+
+# Create a list to store all the bricks    
+bricks = []
+for i in range(7):
+    brick_x = 10 + i*80  
+    brick_y = 50
+    brick = pygame.Rect(brick_x, brick_y, 70, 20)
+    bricks.append(brick) 
+
+# Variables to track game states
+score = 0
+game_over = False
+bricks_left = len(bricks) 
+
+#Main loop for the game
+while True:
+    
+    # Check for exit
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+    
+        # Handle user input for paddle movement    
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                paddle_x -= 10
+            if event.key == pygame.K_RIGHT: 
+                paddle_x += 10
+                
+        # Keep paddle on screen    
+        if paddle_x < 0:
+            paddle_x = 0
+        if paddle_x > screen_width - paddle_width:
+            paddle_x = screen_width - paddle_width
+    
+            
+    # Move the ball
+    ball_x += ball_speed_x
+    ball_y += ball_speed_y
+    
+    # Bounce the ball off the paddle and walls    
+    if ball_y > screen_height - ball_radius: 
+        ball_speed_y = -ball_speed_y 
+    if ball_x < 0 + ball_radius:
+        ball_speed_x = -ball_speed_x
+    if ball_x > screen_width - ball_radius:
+        ball_speed_x = -ball_speed_x
+        
+    # Check if ball collides with paddle
+    if ball.colliderect(paddle):
+        ball_speed_y = -ball_speed_y
+        
+    # Check if ball collides with bricks   
+    for brick in bricks:
+        if ball.colliderect(brick):
+            # Generate random values to simulate brick breaking effect
+            rand_x = random.uniform(-3, 3)
+            rand_y = random.uniform(-3, 3)
+            
+            # Apply random perturbation to ball direction    
+            ball_speed_x += rand_x
+            ball_speed_y += rand_y
+            
+            # Remove brick and update score
+            bricks.remove(brick)
+            score += 1
+            bricks_left -= 1
+            
+    # Check if player loses      
+    if ball_y > screen_height:
+        game_over = True
+        
+    # Draw objects on screen
+    screen.fill(BLACK)
+    pygame.draw.polygon(screen, WHITE, paddle, 0)
+    pygame.draw.ellipse(screen, RED, ball)  
+    
+    for brick in bricks:
+        pygame.draw.rect(screen, GREEN, brick)
+        
+    font = pygame.font.SysFont('arial',20)
+    text = font.render("Score: " + str(score), True, WHITE)
+    screen.blit(text, [0, 0])
+    
+    # Draw game over text if lost
+    if game_over:
+        font = pygame.font.SysFont('arial', 60)
+        text = font.render("GAME OVER", True, RED)
+        screen.blit(text, [200,250])
+        
+    pygame.display.flip()
+    
+    # Check if all bricks are destroyed
+    if bricks_left == 0: 
+        game_over = True
+        
+pygame.quit()
